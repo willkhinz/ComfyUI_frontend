@@ -19,7 +19,6 @@ export enum ServerFeatureFlag {
   ASSET_RENAME_ENABLED = 'asset_rename_enabled',
   PRIVATE_MODELS_ENABLED = 'private_models_enabled',
   ONBOARDING_SURVEY_ENABLED = 'onboarding_survey_enabled',
-  LINEAR_TOGGLE_ENABLED = 'linear_toggle_enabled',
   TEAM_WORKSPACES_ENABLED = 'team_workspaces_enabled',
   USER_SECRETS_ENABLED = 'user_secrets_enabled',
   NODE_REPLACEMENTS = 'node_replacements',
@@ -81,15 +80,6 @@ export function useFeatureFlags() {
       return resolveFlag(
         ServerFeatureFlag.ONBOARDING_SURVEY_ENABLED,
         remoteConfig.value.onboarding_survey_enabled,
-        false
-      )
-    },
-    get linearToggleEnabled() {
-      if (isNightly) return true
-
-      return resolveFlag(
-        ServerFeatureFlag.LINEAR_TOGGLE_ENABLED,
-        remoteConfig.value.linear_toggle_enabled,
         false
       )
     },

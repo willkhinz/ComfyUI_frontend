@@ -36,10 +36,6 @@ const mockSubgraphStore = vi.hoisted(() => ({
   isSubgraphBlueprint: vi.fn(() => false)
 }))
 
-const mockMenuItemStore = vi.hoisted(() => ({
-  hasSeenLinear: false
-}))
-
 const mockAppModeStore = vi.hoisted(() => ({
   enterBuilder: vi.fn(),
   pruneLinearData: vi.fn(
@@ -78,10 +74,6 @@ vi.mock('@/stores/subgraphStore', () => ({
   useSubgraphStore: vi.fn(() => mockSubgraphStore)
 }))
 
-vi.mock('@/stores/menuItemStore', () => ({
-  useMenuItemStore: vi.fn(() => mockMenuItemStore)
-}))
-
 vi.mock('@/stores/appModeStore', () => ({
   useAppModeStore: vi.fn(() => mockAppModeStore)
 }))
@@ -116,7 +108,6 @@ describe('useWorkflowActionsMenu', () => {
     vi.clearAllMocks()
     mockBookmarkStore.isBookmarked.mockReturnValue(false)
     mockSubgraphStore.isSubgraphBlueprint.mockReturnValue(false)
-    mockMenuItemStore.hasSeenLinear = false
     mockFeatureFlags.flags.linearToggleEnabled = false
     mockAppModeStore.selectedInputs.length = 0
     mockAppModeStore.selectedOutputs.length = 0
@@ -161,41 +152,11 @@ describe('useWorkflowActionsMenu', () => {
     expect(labels).not.toContain('breadcrumbsMenu.deleteWorkflow')
   })
 
-  it('shows app mode items when linearToggleEnabled flag is set', () => {
-    mockFeatureFlags.flags.linearToggleEnabled = true
-
+  it('shows app mode items', () => {
     const { menuItems } = useWorkflowActionsMenu(vi.fn(), { isRoot: true })
     const labels = menuLabels(menuItems.value)
 
     expect(labels).toContain('breadcrumbsMenu.enterAppMode')
-  })
-
-  it('shows app mode items when user has seen linear mode', () => {
-    mockMenuItemStore.hasSeenLinear = true
-
-    const { menuItems } = useWorkflowActionsMenu(vi.fn(), { isRoot: true })
-    const labels = menuLabels(menuItems.value)
-
-    expect(labels).toContain('breadcrumbsMenu.enterAppMode')
-  })
-
-  it('hides app mode items when conditions not met', () => {
-    mockMenuItemStore.hasSeenLinear = false
-    mockFeatureFlags.flags.linearToggleEnabled = false
-
-    const { menuItems } = useWorkflowActionsMenu(vi.fn(), { isRoot: true })
-    const labels = menuLabels(menuItems.value)
-
-    expect(labels).not.toContain('breadcrumbsMenu.enterAppMode')
-  })
-
-  it('hides app mode items when not root', () => {
-    mockFeatureFlags.flags.linearToggleEnabled = true
-
-    const { menuItems } = useWorkflowActionsMenu(vi.fn(), { isRoot: false })
-    const labels = menuLabels(menuItems.value)
-
-    expect(labels).not.toContain('breadcrumbsMenu.enterAppMode')
   })
 
   it('shows "go to workflow mode" when in linear mode', () => {
