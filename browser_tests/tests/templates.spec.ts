@@ -116,7 +116,7 @@ test.describe('Templates', { tag: ['@slow', '@workflow'] }, () => {
 
     await comfyPage.command.executeCommand('Comfy.BrowseTemplates')
 
-    const dialog = comfyPage.page.getByRole('dialog').filter({
+    const dialog = comfyPage.templates.dialog.filter({
       has: comfyPage.page.getByRole('heading', { name: 'Modèles', exact: true })
     })
     await expect(dialog).toBeVisible()
@@ -220,8 +220,9 @@ test.describe('Templates', { tag: ['@slow', '@workflow'] }, () => {
       await expect(comfyPage.templates.content).toBeVisible()
 
       // Wait for filter bar select components to render
-      const dialog = comfyPage.page.getByRole('dialog')
-      const sortBySelect = dialog.getByRole('combobox', { name: /Sort/ })
+      const sortBySelect = comfyPage.templates.dialog.getByRole('combobox', {
+        name: /Sort/
+      })
       await expect(sortBySelect).toBeVisible()
 
       // Screenshot the filter bar containing MultiSelect and SingleSelect

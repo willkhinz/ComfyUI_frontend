@@ -10,10 +10,12 @@ import { TestIds } from '../fixtures/selectors'
 
 export class ComfyTemplates {
   readonly content: Locator
+  readonly dialog: Locator
   readonly allTemplateCards: Locator
 
   constructor(readonly page: Page) {
     this.content = page.getByTestId(TestIds.templates.content)
+    this.dialog = page.getByRole('dialog')
     this.allTemplateCards = page.locator('[data-testid^="template-workflow-"]')
   }
 

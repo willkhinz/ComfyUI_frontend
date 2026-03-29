@@ -41,7 +41,7 @@ test.describe('MediaLightbox', { tag: ['@slow'] }, () => {
     await assetCard.hover()
     await assetCard.getByLabel('Zoom in').click()
 
-    const gallery = comfyPage.page.getByRole('dialog')
+    const gallery = comfyPage.mediaLightbox.root
     await expect(gallery).toBeVisible()
 
     return { gallery }
@@ -58,13 +58,13 @@ test.describe('MediaLightbox', { tag: ['@slow'] }, () => {
     await runAndOpenGallery(comfyPage)
 
     await comfyPage.page.keyboard.press('Escape')
-    await expect(comfyPage.page.getByRole('dialog')).not.toBeVisible()
+    await expect(comfyPage.mediaLightbox.root).not.toBeVisible()
   })
 
   test('closes gallery when clicking close button', async ({ comfyPage }) => {
     const { gallery } = await runAndOpenGallery(comfyPage)
 
     await gallery.getByLabel('Close').click()
-    await expect(comfyPage.page.getByRole('dialog')).not.toBeVisible()
+    await expect(comfyPage.mediaLightbox.root).not.toBeVisible()
   })
 })

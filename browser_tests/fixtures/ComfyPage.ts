@@ -121,6 +121,16 @@ type KeysOfType<T, Match> = {
   [K in keyof T]: T[K] extends Match ? K : never
 }[keyof T]
 
+class MediaLightbox {
+  readonly root: Locator
+  readonly closeButton: Locator
+
+  constructor(public readonly page: Page) {
+    this.root = page.getByRole('dialog')
+    this.closeButton = this.root.getByLabel('Close')
+  }
+}
+
 class ConfirmDialog {
   public readonly root: Locator
   public readonly delete: Locator
@@ -182,6 +192,7 @@ export class ComfyPage {
   public readonly templates: ComfyTemplates
   public readonly settingDialog: SettingDialog
   public readonly confirmDialog: ConfirmDialog
+  public readonly mediaLightbox: MediaLightbox
   public readonly vueNodes: VueNodeHelpers
   public readonly appMode: AppModeHelper
   public readonly subgraph: SubgraphHelper
@@ -230,6 +241,7 @@ export class ComfyPage {
     this.templates = new ComfyTemplates(page)
     this.settingDialog = new SettingDialog(page, this)
     this.confirmDialog = new ConfirmDialog(page)
+    this.mediaLightbox = new MediaLightbox(page)
     this.vueNodes = new VueNodeHelpers(page)
     this.appMode = new AppModeHelper(this)
     this.subgraph = new SubgraphHelper(this)

@@ -18,7 +18,7 @@ test.describe('Confirm dialog text wrapping', { tag: ['@mobile'] }, () => {
         .catch(() => {})
     }, longFilename)
 
-    const dialog = comfyPage.page.getByRole('dialog')
+    const dialog = comfyPage.confirmDialog.root
     await expect(dialog).toBeVisible()
 
     const confirmButton = dialog.getByRole('button', { name: 'Confirm' })
