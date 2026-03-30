@@ -109,11 +109,13 @@ async function saveAndWait(
 ): Promise<void> {
   await comfyPage.menu.topbar.saveWorkflow(workflowName)
   await comfyPage.page.waitForFunction(
-    () =>
-      (window.app!.extensionManager as WorkspaceStore).workflow.activeWorkflow
-        ?.isModified === false,
+    () => {
+      const wf = (window.app!.extensionManager as WorkspaceStore).workflow
+        .activeWorkflow
+      return wf !== null && !wf.isTemporary && !wf.isModified
+    },
     undefined,
-    { timeout: 3000 }
+    { timeout: 5000 }
   )
 }
 
