@@ -3,6 +3,7 @@ import { expect } from '@playwright/test'
 
 import type { AssetInfo } from '../../../src/schemas/apiSchema'
 import { comfyPageFixture } from '../../fixtures/ComfyPage'
+import type { WorkspaceStore } from '../../types/globals'
 
 interface PublishRecord {
   workflow_id: string
@@ -91,8 +92,34 @@ async function mockShareableAssets(
   })
 }
 
+async function dismissOverlays(page: Page): Promise<void> {
+  // In the cloud build a stale PrimeVue dialog mask can linger after
+  // saveWorkflow or from the onboarding flow.  Press Escape to dismiss
+  // any open dialog, then wait for the mask to disappear.
+  const mask = page.locator('.p-dialog-mask')
+  if ((await mask.count()) > 0) {
+    await page.keyboard.press('Escape')
+    await mask.first().waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {})
+  }
+}
+
+async function saveAndWait(
+  comfyPage: { page: Page; menu: { topbar: { saveWorkflow(name: string): Promise<void> } } },
+  workflowName: string
+): Promise<void> {
+  await comfyPage.menu.topbar.saveWorkflow(workflowName)
+  await comfyPage.page.waitForFunction(
+    () =>
+      (window.app!.extensionManager as WorkspaceStore).workflow.activeWorkflow
+        ?.isModified === false,
+    undefined,
+    { timeout: 3000 }
+  )
+}
+
 async function openShareDialog(page: Page): Promise<void> {
   await enableWorkflowSharing(page)
+  await dismissOverlays(page)
   const shareButton = page.getByRole('button', { name: 'Share workflow' })
   await shareButton.click()
 }
@@ -124,7 +151,7 @@ test.describe('Share Workflow Dialog', { tag: '@cloud' }, () => {
     const { page } = comfyPage
     const workflowName = 'share-test-ready'
 
-    await comfyPage.menu.topbar.saveWorkflow(workflowName)
+    await saveAndWait(comfyPage, workflowName)
 
     await mockPublishStatus(page, null)
     await mockShareableAssets(page)
@@ -145,7 +172,7 @@ test.describe('Share Workflow Dialog', { tag: '@cloud' }, () => {
     const { page } = comfyPage
     const workflowName = 'share-test-shared'
 
-    await comfyPage.menu.topbar.saveWorkflow(workflowName)
+    await saveAndWait(comfyPage, workflowName)
 
     await mockPublishStatus(page, PUBLISHED_RECORD)
     await mockShareableAssets(page)
@@ -166,7 +193,7 @@ test.describe('Share Workflow Dialog', { tag: '@cloud' }, () => {
     const { page } = comfyPage
     const workflowName = 'share-test-stale'
 
-    await comfyPage.menu.topbar.saveWorkflow(workflowName)
+    await saveAndWait(comfyPage, workflowName)
 
     const staleRecord: PublishRecord = {
       ...PUBLISHED_RECORD,
@@ -208,7 +235,7 @@ test.describe('Share Workflow Dialog', { tag: '@cloud' }, () => {
     const { page } = comfyPage
     const workflowName = 'share-test-create'
 
-    await comfyPage.menu.topbar.saveWorkflow(workflowName)
+    await saveAndWait(comfyPage, workflowName)
 
     await mockPublishStatus(page, null)
     await mockShareableAssets(page)
@@ -285,7 +312,7 @@ test.describe('Share Workflow Dialog', { tag: '@cloud' }, () => {
     const { page } = comfyPage
     const workflowName = 'share-test-ack'
 
-    await comfyPage.menu.topbar.saveWorkflow(workflowName)
+    await saveAndWait(comfyPage, workflowName)
 
     await mockPublishStatus(page, null)
     await mockShareableAssets(page, [PRIVATE_ASSET])
