@@ -2,22 +2,70 @@
 
 This guide covers patterns and examples for testing Vue components in the ComfyUI Frontend codebase.
 
+## Testing Libraries
+
+This project supports two component testing approaches:
+
+- **@testing-library/vue** (Recommended) - User-centric, behavior-focused testing with semantic queries
+- **@vue/test-utils** - Lower-level component API testing
+
+Both are acceptable, but Testing Library is preferred for new tests as it encourages better testing practices.
+
 ## Table of Contents
 
-1. [Basic Component Testing](#basic-component-testing)
-2. [PrimeVue Components Testing](#primevue-components-testing)
-3. [Tooltip Directives](#tooltip-directives)
-4. [Component Events Testing](#component-events-testing)
-5. [User Interaction Testing](#user-interaction-testing)
-6. [Asynchronous Component Testing](#asynchronous-component-testing)
-7. [Working with Vue Reactivity](#working-with-vue-reactivity)
+1. [Basic Component Testing with Testing Library](#basic-component-testing-with-testing-library)
+2. [Basic Component Testing with Vue Test Utils](#basic-component-testing-with-vue-test-utils)
+3. [PrimeVue Components Testing](#primevue-components-testing)
+4. [Tooltip Directives](#tooltip-directives)
+5. [Component Events Testing](#component-events-testing)
+6. [User Interaction Testing](#user-interaction-testing)
+7. [Asynchronous Component Testing](#asynchronous-component-testing)
+8. [Working with Vue Reactivity](#working-with-vue-reactivity)
 
-## Basic Component Testing
+## Basic Component Testing with Testing Library
 
-Basic approach to testing a component's rendering and structure:
+User-centric approach using @testing-library/vue (recommended):
 
 ```typescript
-// Example from: src/components/sidebar/SidebarIcon.spec.ts
+// Example from: src/components/sidebar/SidebarIcon.test.ts
+import { render, screen } from '@testing-library/vue'
+import userEvent from '@testing-library/user-event'
+import SidebarIcon from './SidebarIcon.vue'
+
+describe('SidebarIcon', () => {
+  const exampleProps = {
+    icon: 'pi pi-cog',
+    selected: false,
+    tooltip: 'Settings'
+  }
+
+  it('renders as a button with accessible label', () => {
+    render(SidebarIcon, { props: exampleProps })
+
+    const button = screen.getByRole('button', { name: 'Settings' })
+    expect(button).toBeInTheDocument()
+  })
+
+  it('handles click interactions', async () => {
+    const user = userEvent.setup()
+    const onClick = vi.fn()
+
+    render(SidebarIcon, {
+      props: { ...exampleProps, onClick }
+    })
+
+    await user.click(screen.getByRole('button'))
+    expect(onClick).toHaveBeenCalled()
+  })
+})
+```
+
+## Basic Component Testing with Vue Test Utils
+
+Lower-level API testing approach:
+
+```typescript
+// Alternative approach using @vue/test-utils
 import { mount } from '@vue/test-utils'
 import SidebarIcon from './SidebarIcon.vue'
 

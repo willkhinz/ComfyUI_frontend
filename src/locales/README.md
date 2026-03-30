@@ -4,14 +4,18 @@ Our project supports multiple languages using `vue-i18n`. This allows users arou
 
 ## Supported Languages
 
+- ar (العربية)
 - en (English)
-- zh (中文)
-- ru (Русский)
+- es (Español)
+- fa (فارسی)
+- fr (Français)
 - ja (日本語)
 - ko (한국어)
-- fr (Français)
-- es (Español)
+- pt-BR (Português Brasileiro)
+- ru (Русский)
 - tr (Türkçe)
+- zh (中文)
+- zh-TW (繁體中文)
 
 ## How to Add a New Language
 

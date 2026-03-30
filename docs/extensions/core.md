@@ -25,7 +25,7 @@ ComfyUI's extension system follows these key principles:
 
 ## Core Extensions List
 
-The following table lists ALL core extensions in the system as of 2025-01-30:
+The following table lists the main core extensions in the system. Additional extensions may exist for specialized features like cloud integration, badges, and advanced UI features. See `src/extensions/core/` for the complete list.
 
 ### Main Extensions
 
