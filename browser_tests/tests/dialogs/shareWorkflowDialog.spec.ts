@@ -2,12 +2,7 @@ import type { Page } from '@playwright/test'
 import { expect } from '@playwright/test'
 
 import type { AssetInfo } from '../../../src/schemas/apiSchema'
-import {
-  ComfyPage,
-  comfyPageFixture,
-  testComfySnapToGridGridSize
-} from '../../fixtures/ComfyPage'
-import { NodeBadgeMode } from '../../../src/types/nodeSource'
+import { comfyPageFixture } from '../../fixtures/ComfyPage'
 
 interface PublishRecord {
   workflow_id: string
@@ -33,69 +28,7 @@ const PRIVATE_ASSET: AssetInfo = {
   in_library: false
 }
 
-/**
- * Extended comfyPage fixture that seeds an API key before navigation
- * so the cloud build's Firebase auth guard lets the app initialize.
- */
-const test = comfyPageFixture.extend<{ comfyPage: ComfyPage }>({
-  comfyPage: async ({ page, request }, use, testInfo) => {
-    const comfyPage = new ComfyPage(page, request)
-
-    const { parallelIndex } = testInfo
-    const username = `playwright-test-${parallelIndex}`
-    const userId = await comfyPage.setupUser(username)
-    comfyPage.userIds[parallelIndex] = userId
-
-    try {
-      await comfyPage.setupSettings({
-        'Comfy.UseNewMenu': 'Top',
-        'Comfy.Graph.CanvasInfo': false,
-        'Comfy.Graph.CanvasMenu': false,
-        'Comfy.Canvas.SelectionToolbox': false,
-        'Comfy.NodeBadge.NodeIdBadgeMode': NodeBadgeMode.None,
-        'Comfy.NodeBadge.NodeSourceBadgeMode': NodeBadgeMode.None,
-        'Comfy.EnableTooltips': false,
-        'Comfy.userId': userId,
-        'Comfy.TutorialCompleted': true,
-        'Comfy.SnapToGrid.GridSize': testComfySnapToGridGridSize,
-        'Comfy.VueNodes.AutoScaleLayout': false,
-        'Comfy.VersionCompatibility.DisableWarnings': true,
-        'Comfy.RightSidePanel.ShowErrorsTab': false
-      })
-    } catch (e) {
-      console.error(e)
-    }
-
-    // Seed API key so the cloud auth guard sees a valid auth header.
-    // addInitScript runs before page JS on every navigation, so the
-    // key is present when the auth store initializes — even after the
-    // fixture's localStorage.clear() on the preceding /api/users page.
-    await page.addInitScript(() => {
-      localStorage.setItem('comfy_api_key', 'test-api-key')
-    })
-
-    // Abort Firebase network requests so onAuthStateChanged resolves
-    // quickly with null (no cached user) instead of waiting for Google.
-    await page.route(/googleapis\.com/, (route) => route.abort())
-
-    // Mock the external customers endpoint that apiKeyAuthStore calls
-    // when it detects the seeded API key.
-    await page.route('**/customers', async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 201,
-          contentType: 'application/json',
-          body: JSON.stringify({ id: 'test-customer' })
-        })
-      } else {
-        await route.fallback()
-      }
-    })
-
-    await comfyPage.setup()
-    await use(comfyPage)
-  }
-})
+const test = comfyPageFixture
 
 async function enableWorkflowSharing(page: Page): Promise<void> {
   await page.evaluate(() => {
