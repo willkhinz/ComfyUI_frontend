@@ -32,6 +32,10 @@ export class VueNodeFixture {
     return this.locator
   }
 
+  get widgets(): Locator {
+    return this.locator.locator('.lg-node-widget')
+  }
+
   async getTitle(): Promise<string> {
     return (await this.title.textContent()) ?? ''
   }
