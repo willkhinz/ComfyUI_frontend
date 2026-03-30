@@ -94,12 +94,23 @@ async function mockShareableAssets(
 
 async function dismissOverlays(page: Page): Promise<void> {
   // In the cloud build a stale PrimeVue dialog mask can linger after
-  // saveWorkflow or from the onboarding flow.  Press Escape to dismiss
-  // any open dialog, then wait for the mask to disappear.
+  // saveWorkflow or from the onboarding flow.  Try dismissing via
+  // Escape first, then forcefully remove any remaining masks via JS.
   const mask = page.locator('.p-dialog-mask')
   if ((await mask.count()) > 0) {
     await page.keyboard.press('Escape')
-    await mask.first().waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {})
+    await mask
+      .first()
+      .waitFor({ state: 'hidden', timeout: 2000 })
+      .catch(() => {})
+  }
+  // Force-remove any stale masks that CSS transitions left behind
+  if ((await mask.count()) > 0) {
+    await page.evaluate(() => {
+      document
+        .querySelectorAll('.p-dialog-mask')
+        .forEach((el) => el.remove())
+    })
   }
 }
 
@@ -108,6 +119,8 @@ async function saveAndWait(
   workflowName: string
 ): Promise<void> {
   await comfyPage.menu.topbar.saveWorkflow(workflowName)
+
+  // Wait for the workflow to be persisted and clean
   await comfyPage.page.waitForFunction(
     () => {
       const wf = (window.app!.extensionManager as WorkspaceStore).workflow
@@ -117,6 +130,29 @@ async function saveAndWait(
     undefined,
     { timeout: 5000 }
   )
+
+  // Dismiss any lingering dialog masks from the save operation
+  await dismissOverlays(comfyPage.page)
+
+  // Assert workflow state to fail fast with diagnostics if save didn't take
+  const state = await comfyPage.page.evaluate(() => {
+    const wf = (window.app!.extensionManager as WorkspaceStore).workflow
+      .activeWorkflow
+    return {
+      path: wf?.path,
+      isTemporary: wf?.isTemporary,
+      isModified: wf?.isModified,
+      size: (wf as { size?: number } | null)?.size
+    }
+  })
+  expect(
+    state.isTemporary,
+    `Workflow should be persisted after save (path=${state.path}, size=${state.size})`
+  ).toBe(false)
+  expect(
+    state.isModified,
+    `Workflow should not be modified after save (path=${state.path})`
+  ).toBe(false)
 }
 
 async function openShareDialog(page: Page): Promise<void> {
