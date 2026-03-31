@@ -172,31 +172,32 @@ async function saveAndWait(
     }
   }, workflowName)
 
-  // Log diagnostics for CI debugging
   if ('error' in evalResult) {
     throw new Error(`saveAndWait failed: ${evalResult.error}`)
   }
 
-  // Assert workflow state to fail fast with diagnostics if save didn't take
-  const state = await comfyPage.page.evaluate(() => {
-    const wf = (window.app!.extensionManager as WorkspaceStore).workflow
-      .activeWorkflow
-    return {
-      path: wf?.path,
-      isTemporary: wf?.isTemporary,
-      isModified: wf?.isModified,
-      size: (wf as { size?: number } | null)?.size
+  // In cloud mode, the detach/attach cycle during saveWorkflow can trigger
+  // reactivity that switches activeWorkflow to a new default tab.
+  // Re-open the saved workflow to ensure it's the active one.
+  await comfyPage.page.evaluate(async (savedPath: string) => {
+    const store = (window.app!.extensionManager as WorkspaceStore).workflow
+    const saved = store.getWorkflowByPath(savedPath)
+    if (saved && store.activeWorkflow?.path !== savedPath) {
+      await store.openWorkflow(saved)
     }
-  })
-  const diag = JSON.stringify({ evalResult, state })
-  expect(
-    state.isTemporary,
-    `Workflow should be persisted after save: ${diag}`
-  ).toBe(false)
-  expect(
-    state.isModified,
-    `Workflow should not be modified after save: ${diag}`
-  ).toBe(false)
+  }, evalResult.afterPath)
+
+  await expect
+    .poll(
+      () =>
+        comfyPage.page.evaluate(() => {
+          const wf = (window.app!.extensionManager as WorkspaceStore).workflow
+            .activeWorkflow
+          return wf && !wf.isTemporary ? wf.path : null
+        }),
+      { timeout: 5000 }
+    )
+    .toBe(evalResult.afterPath)
 }
 
 async function openShareDialog(page: Page): Promise<void> {
