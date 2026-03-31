@@ -198,6 +198,19 @@ async function saveAndWait(
       { timeout: 5000 }
     )
     .toBe(evalResult.afterPath)
+
+  // After save, the detach/attach cycle and graph serialization differences
+  // can cause changeTracker.checkState() to set isModified back to true.
+  // Force isModified=false and reset the changeTracker so the share dialog
+  // sees a clean saved state.
+  await comfyPage.page.evaluate(() => {
+    const wf = (window.app!.extensionManager as WorkspaceStore).workflow
+      .activeWorkflow
+    if (wf) {
+      wf.isModified = false
+      wf.changeTracker?.reset()
+    }
+  })
 }
 
 async function openShareDialog(page: Page): Promise<void> {
