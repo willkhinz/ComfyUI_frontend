@@ -16,7 +16,7 @@ const PUBLISHED_RECORD: PublishRecord = {
   workflow_id: 'wf-1',
   share_id: 'share-abc',
   listed: false,
-  publish_time: '2026-01-15T00:00:00Z'
+  publish_time: new Date(Date.now() + 60_000).toISOString()
 }
 
 const PRIVATE_ASSET: AssetInfo = {
