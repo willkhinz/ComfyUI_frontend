@@ -142,10 +142,13 @@ async function saveAndWait(
   )
 
   // Save directly via store methods, bypassing UI interactions.
-  await comfyPage.page.evaluate(async (name: string) => {
+  const evalResult = await comfyPage.page.evaluate(async (name: string) => {
     const store = (window.app!.extensionManager as WorkspaceStore).workflow
     const workflow = store.activeWorkflow
-    if (!workflow) throw new Error('No active workflow to save')
+    if (!workflow) return { error: 'No active workflow' }
+
+    const wasTemporary = workflow.isTemporary
+    const oldPath = workflow.path
 
     const newPath =
       workflow.directory +
@@ -158,7 +161,21 @@ async function saveAndWait(
     }
     workflow.changeTracker?.checkState()
     await store.saveWorkflow(workflow)
+
+    return {
+      oldPath,
+      newPath,
+      wasTemporary,
+      afterPath: workflow.path,
+      afterSize: workflow.size,
+      afterIsTemporary: workflow.isTemporary
+    }
   }, workflowName)
+
+  // Log diagnostics for CI debugging
+  if ('error' in evalResult) {
+    throw new Error(`saveAndWait failed: ${evalResult.error}`)
+  }
 
   // Assert workflow state to fail fast with diagnostics if save didn't take
   const state = await comfyPage.page.evaluate(() => {
@@ -171,13 +188,14 @@ async function saveAndWait(
       size: (wf as { size?: number } | null)?.size
     }
   })
+  const diag = JSON.stringify({ evalResult, state })
   expect(
     state.isTemporary,
-    `Workflow should be persisted after save (path=${state.path}, size=${state.size})`
+    `Workflow should be persisted after save: ${diag}`
   ).toBe(false)
   expect(
     state.isModified,
-    `Workflow should not be modified after save (path=${state.path})`
+    `Workflow should not be modified after save: ${diag}`
   ).toBe(false)
 }
 
