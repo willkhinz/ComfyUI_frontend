@@ -132,7 +132,7 @@ async function saveAndWait(
           body: JSON.stringify({
             path: `workflows/${filename}`,
             size: 1024,
-            modified: Date.now() / 1000
+            modified: Date.now()
           })
         })
       } else {
