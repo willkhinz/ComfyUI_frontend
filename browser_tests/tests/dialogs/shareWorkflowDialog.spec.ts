@@ -249,12 +249,44 @@ test.describe('Share Workflow Dialog', { tag: '@cloud' }, () => {
 
     await saveAndWait(comfyPage, workflowName)
 
+    // Debug: capture workflow state before opening dialog
+    const preDialogState = await page.evaluate(() => {
+      const store = (window.app!.extensionManager as WorkspaceStore).workflow
+      const wf = store.activeWorkflow
+      return {
+        hasWorkflow: !!wf,
+        path: wf?.path,
+        isTemporary: wf?.isTemporary,
+        isModified: wf?.isModified,
+        size: wf?.size,
+        hasChangeTracker: !!wf?.changeTracker
+      }
+    })
+    console.log('Pre-dialog workflow state:', JSON.stringify(preDialogState))
+
     await mockPublishStatus(page, null)
     await mockShareableAssets(page)
+
+    // Log all route-matched requests to debug interception
+    page.on('requestfinished', async (req) => {
+      const url = req.url()
+      if (url.includes('userdata') || url.includes('publish')) {
+        const resp = await req.response()
+        console.log(`[REQ] ${req.method()} ${url} -> ${resp?.status()}`)
+      }
+    })
+
     await openShareDialog(page)
 
     const dialog = getShareDialog(page)
     await expect(dialog).toBeVisible()
+
+    // Debug: capture what buttons are in the dialog
+    const dialogButtons = await dialog
+      .getByRole('button')
+      .allTextContents()
+    console.log('Dialog buttons:', JSON.stringify(dialogButtons))
+
     await expect(
       dialog.getByRole('button', { name: /create link/i })
     ).toBeVisible()
