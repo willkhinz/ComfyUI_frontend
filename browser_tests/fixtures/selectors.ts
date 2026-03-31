@@ -91,6 +91,20 @@ export const TestIds = {
     widgetItem: 'builder-widget-item',
     widgetLabel: 'builder-widget-label'
   },
+  outputHistory: {
+    outputs: 'linear-outputs',
+    welcome: 'linear-welcome',
+    outputInfo: 'linear-output-info',
+    activeQueue: 'linear-job',
+    queueBadge: 'linear-job-badge',
+    inProgressItem: 'linear-in-progress-item',
+    historyItem: 'linear-history-item',
+    skeleton: 'linear-skeleton',
+    latentPreview: 'linear-latent-preview',
+    imageOutput: 'linear-image-output',
+    videoOutput: 'linear-video-output',
+    cancelRun: 'linear-cancel-run'
+  },
   breadcrumb: {
     subgraph: 'subgraph-breadcrumb'
   },
@@ -127,6 +141,7 @@ export type TestIdValue =
   | (typeof TestIds.selectionToolbox)[keyof typeof TestIds.selectionToolbox]
   | (typeof TestIds.widgets)[keyof typeof TestIds.widgets]
   | (typeof TestIds.builder)[keyof typeof TestIds.builder]
+  | (typeof TestIds.outputHistory)[keyof typeof TestIds.outputHistory]
   | (typeof TestIds.breadcrumb)[keyof typeof TestIds.breadcrumb]
   | Exclude<
       (typeof TestIds.templates)[keyof typeof TestIds.templates],
