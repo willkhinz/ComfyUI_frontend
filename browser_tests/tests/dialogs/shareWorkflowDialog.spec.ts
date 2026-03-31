@@ -123,7 +123,7 @@ async function saveAndWait(
   // shared backend) and auth-related timing issues in cloud mode's fetchApi().
   const filename = workflowName + (workflowName.endsWith('.json') ? '' : '.json')
   await comfyPage.page.route(
-    `**/api/userdata/workflows/${encodeURIComponent(filename)}*`,
+    /\/api\/userdata\/workflows(%2F|\/).*$/,
     async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
