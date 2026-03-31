@@ -115,24 +115,25 @@ async function dismissOverlays(page: Page): Promise<void> {
 }
 
 async function saveAndWait(
-  comfyPage: { page: Page; menu: { topbar: { saveWorkflow(name: string): Promise<void> } } },
+  comfyPage: { page: Page },
   workflowName: string
 ): Promise<void> {
-  await comfyPage.menu.topbar.saveWorkflow(workflowName)
+  // Save directly via store methods, bypassing UI interactions that are
+  // unreliable in cloud mode due to auth-related timing in fetchApi().
+  await comfyPage.page.evaluate(async (name: string) => {
+    const store = (window.app!.extensionManager as WorkspaceStore).workflow
+    const workflow = store.activeWorkflow
+    if (!workflow) throw new Error('No active workflow to save')
 
-  // Wait for the workflow to be persisted and clean
-  await comfyPage.page.waitForFunction(
-    () => {
-      const wf = (window.app!.extensionManager as WorkspaceStore).workflow
-        .activeWorkflow
-      return wf !== null && !wf.isTemporary && !wf.isModified
-    },
-    undefined,
-    { timeout: 5000 }
-  )
+    const newPath =
+      workflow.directory + '/' + name + (name.endsWith('.json') ? '' : '.json')
 
-  // Dismiss any lingering dialog masks from the save operation
-  await dismissOverlays(comfyPage.page)
+    if (workflow.isTemporary) {
+      await store.renameWorkflow(workflow, newPath)
+    }
+    workflow.changeTracker?.checkState()
+    await store.saveWorkflow(workflow)
+  }, workflowName)
 
   // Assert workflow state to fail fast with diagnostics if save didn't take
   const state = await comfyPage.page.evaluate(() => {
