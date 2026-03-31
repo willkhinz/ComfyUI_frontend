@@ -118,15 +118,40 @@ async function saveAndWait(
   comfyPage: { page: Page },
   workflowName: string
 ): Promise<void> {
-  // Save directly via store methods, bypassing UI interactions that are
-  // unreliable in cloud mode due to auth-related timing in fetchApi().
+  // Mock the userdata POST endpoint to return a valid full_info response.
+  // This avoids 409 Conflict on retries (file persists across retries on the
+  // shared backend) and auth-related timing issues in cloud mode's fetchApi().
+  const filename = workflowName + (workflowName.endsWith('.json') ? '' : '.json')
+  await comfyPage.page.route(
+    `**/api/userdata/workflows/${encodeURIComponent(filename)}*`,
+    async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            path: `workflows/${filename}`,
+            size: 1024,
+            modified: Date.now() / 1000
+          })
+        })
+      } else {
+        await route.fallback()
+      }
+    }
+  )
+
+  // Save directly via store methods, bypassing UI interactions.
   await comfyPage.page.evaluate(async (name: string) => {
     const store = (window.app!.extensionManager as WorkspaceStore).workflow
     const workflow = store.activeWorkflow
     if (!workflow) throw new Error('No active workflow to save')
 
     const newPath =
-      workflow.directory + '/' + name + (name.endsWith('.json') ? '' : '.json')
+      workflow.directory +
+      '/' +
+      name +
+      (name.endsWith('.json') ? '' : '.json')
 
     if (workflow.isTemporary) {
       await store.renameWorkflow(workflow, newPath)
@@ -201,8 +226,6 @@ test.describe('Share Workflow Dialog', { tag: '@cloud' }, () => {
     await expect(
       dialog.getByRole('button', { name: /create link/i })
     ).toBeVisible()
-
-    await comfyPage.workflow.deleteWorkflow(workflowName)
   })
 
   test('should show shared state with copy URL after publishing', async ({
@@ -222,8 +245,6 @@ test.describe('Share Workflow Dialog', { tag: '@cloud' }, () => {
     await expect(
       dialog.getByRole('textbox', { name: /share.*url/i })
     ).toBeVisible()
-
-    await comfyPage.workflow.deleteWorkflow(workflowName)
   })
 
   test('should show stale state with update link button', async ({
@@ -248,8 +269,6 @@ test.describe('Share Workflow Dialog', { tag: '@cloud' }, () => {
     await expect(
       dialog.getByRole('button', { name: /update link/i })
     ).toBeVisible()
-
-    await comfyPage.workflow.deleteWorkflow(workflowName)
   })
 
   test('should close dialog when close button is clicked', async ({
@@ -289,8 +308,6 @@ test.describe('Share Workflow Dialog', { tag: '@cloud' }, () => {
     await expect(
       dialog.getByRole('textbox', { name: /share.*url/i })
     ).toBeVisible()
-
-    await comfyPage.workflow.deleteWorkflow(workflowName)
   })
 
   test('should show tab buttons when comfyHubUploadEnabled is true', async ({
@@ -363,7 +380,5 @@ test.describe('Share Workflow Dialog', { tag: '@cloud' }, () => {
 
     await dialog.locator('input[type="checkbox"]').check()
     await expect(createButton).toBeEnabled()
-
-    await comfyPage.workflow.deleteWorkflow(workflowName)
   })
 })
