@@ -15,7 +15,7 @@ import type { ComboInputSpec } from '@/schemas/nodeDef/nodeDefSchemaV2'
 import type { SimplifiedWidget } from '@/types/simplifiedWidget'
 import { createMockWidget } from './widgetTestUtils'
 
-const mockCheckState = vi.hoisted(() => vi.fn())
+const mockCaptureCanvasState = vi.hoisted(() => vi.fn())
 const mockAssetsData = vi.hoisted(() => ({ items: [] as AssetItem[] }))
 
 vi.mock('@/platform/workflow/management/stores/workflowStore', async () => {
@@ -27,7 +27,7 @@ vi.mock('@/platform/workflow/management/stores/workflowStore', async () => {
     useWorkflowStore: () => ({
       activeWorkflow: {
         changeTracker: {
-          checkState: mockCheckState
+          captureCanvasState: mockCaptureCanvasState
         }
       }
     })
@@ -767,10 +767,10 @@ describe('WidgetSelectDropdown undo tracking', () => {
   }
 
   beforeEach(() => {
-    mockCheckState.mockClear()
+    mockCaptureCanvasState.mockClear()
   })
 
-  it('calls checkState after dropdown selection changes modelValue', () => {
+  it('calls captureCanvasState after dropdown selection changes modelValue', () => {
     const widget = createMockWidget<string | undefined>({
       value: 'img_001.png',
       name: 'test_image',
@@ -782,10 +782,10 @@ describe('WidgetSelectDropdown undo tracking', () => {
     wrapper.vm.updateSelectedItems(new Set(['input-1']))
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['photo_abc.jpg'])
-    expect(mockCheckState).toHaveBeenCalledOnce()
+    expect(mockCaptureCanvasState).toHaveBeenCalledOnce()
   })
 
-  it('calls checkState after file upload completes', async () => {
+  it('calls captureCanvasState after file upload completes', async () => {
     const { api } = await import('@/scripts/api')
     vi.mocked(api.fetchApi).mockResolvedValue({
       status: 200,
@@ -804,6 +804,6 @@ describe('WidgetSelectDropdown undo tracking', () => {
     await wrapper.vm.handleFilesUpdate([file])
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['uploaded.png'])
-    expect(mockCheckState).toHaveBeenCalledOnce()
+    expect(mockCaptureCanvasState).toHaveBeenCalledOnce()
   })
 })

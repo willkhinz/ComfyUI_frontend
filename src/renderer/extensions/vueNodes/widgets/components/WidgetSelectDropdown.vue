@@ -432,7 +432,7 @@ function updateSelectedItems(selectedItems: Set<string>) {
     return
   }
   modelValue.value = name
-  useWorkflowStore().activeWorkflow?.changeTracker?.checkState()
+  useWorkflowStore().activeWorkflow?.changeTracker?.captureCanvasState()
 }
 
 const uploadFile = async (
@@ -509,7 +509,7 @@ async function handleFilesUpdate(files: File[]) {
     }
 
     // 5. Snapshot undo state so the image change gets its own undo entry
-    useWorkflowStore().activeWorkflow?.changeTracker?.checkState()
+    useWorkflowStore().activeWorkflow?.changeTracker?.captureCanvasState()
   } catch (error) {
     console.error('Upload error:', error)
     toastStore.addAlert(`Upload failed: ${error}`)

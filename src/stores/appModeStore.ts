@@ -89,7 +89,7 @@ export const useAppModeStore = defineStore('appMode', () => {
         inputs: [...data.inputs],
         outputs: [...data.outputs]
       }
-      workflowStore.activeWorkflow?.changeTracker?.checkState()
+      workflowStore.activeWorkflow?.changeTracker?.captureCanvasState()
     },
     { deep: true }
   )

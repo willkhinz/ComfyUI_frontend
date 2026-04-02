@@ -262,7 +262,7 @@ test.describe('Subgraph Nested Scenarios', { tag: ['@subgraph'] }, () => {
    * node.widgets (rebuilt from the promotion store) vs input._widget (cached
    * at promotion time). After repointing, input._widget still pointed to
    * removed node IDs, causing missing-node failures and blank values on the
-   * next checkState cycle.
+   * next captureCanvasState cycle.
    */
   test.describe(
     'Nested subgraph pack preserves promoted widget values',
