@@ -42,8 +42,12 @@ import { useSettingStore } from '@/platform/settings/settingStore'
 const lightIntensity = defineModel<number>('lightIntensity')
 const materialMode = defineModel<MaterialMode>('materialMode')
 
+const { hdriEnabled = false } = defineProps<{
+  hdriEnabled?: boolean
+}>()
+
 const showLightIntensityButton = computed(
-  () => materialMode.value === 'original'
+  () => materialMode.value === 'original' && !hdriEnabled
 )
 const showLightIntensity = ref(false)
 

@@ -22,11 +22,14 @@
         v-model:model-config="modelConfig"
         v-model:camera-config="cameraConfig"
         v-model:light-config="lightConfig"
+        v-model:hdri-config="hdriConfig"
         :is-splat-model="isSplatModel"
         :is-ply-model="isPlyModel"
         :has-skeleton="hasSkeleton"
+        :hdri-supported="hdriSupported"
         @update-background-image="handleBackgroundImageUpdate"
         @export-model="handleExportModel"
+        @update-hdri-file="handleHDRIFileUpdate"
       />
       <AnimationControls
         v-if="animations && animations.length > 0"
@@ -106,13 +109,12 @@ if (isComponentWidget(props.widget)) {
 }
 
 const {
-  // configs
   sceneConfig,
   modelConfig,
   cameraConfig,
   lightConfig,
-
-  // other state
+  hdriConfig,
+  hdriSupported,
   isRecording,
   isPreview,
   isSplatModel,
@@ -128,8 +130,6 @@ const {
   animationDuration,
   loading,
   loadingMessage,
-
-  // Methods
   initializeLoad3d,
   handleMouseEnter,
   handleMouseLeave,
@@ -139,6 +139,7 @@ const {
   handleClearRecording,
   handleSeek,
   handleBackgroundImageUpdate,
+  handleHDRIFileUpdate,
   handleExportModel,
   handleModelDrop,
   cleanup

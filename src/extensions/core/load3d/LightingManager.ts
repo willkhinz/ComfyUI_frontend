@@ -79,5 +79,11 @@ export class LightingManager implements LightingManagerInterface {
     this.eventManager.emitEvent('lightIntensityChange', intensity)
   }
 
+  setHDRIMode(hdriActive: boolean): void {
+    this.lights.forEach((light) => {
+      light.visible = !hdriActive
+    })
+  }
+
   reset(): void {}
 }

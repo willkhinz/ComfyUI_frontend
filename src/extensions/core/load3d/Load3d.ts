@@ -6,6 +6,7 @@ import { AnimationManager } from './AnimationManager'
 import { CameraManager } from './CameraManager'
 import { ControlsManager } from './ControlsManager'
 import { EventManager } from './EventManager'
+import { HDRIManager } from './HDRIManager'
 import { LightingManager } from './LightingManager'
 import { LoaderManager } from './LoaderManager'
 import { ModelExporter } from './ModelExporter'
@@ -13,6 +14,7 @@ import { RecordingManager } from './RecordingManager'
 import { SceneManager } from './SceneManager'
 import { SceneModelManager } from './SceneModelManager'
 import { ViewHelperManager } from './ViewHelperManager'
+import { HDRI_COMPATIBLE_MODEL_EXTENSIONS } from './constants'
 import {
   type CameraState,
   type CaptureResult,
@@ -54,6 +56,7 @@ class Load3d {
   cameraManager: CameraManager
   controlsManager: ControlsManager
   lightingManager: LightingManager
+  hdriManager: HDRIManager
   viewHelperManager: ViewHelperManager
   loaderManager: LoaderManager
   modelManager: SceneModelManager
@@ -93,6 +96,8 @@ class Load3d {
     this.renderer.setClearColor(0x282828)
     this.renderer.autoClear = false
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping
+    this.renderer.toneMappingExposure = 1.0
     this.renderer.domElement.classList.add(
       'absolute',
       'inset-0',
@@ -123,6 +128,12 @@ class Load3d {
 
     this.lightingManager = new LightingManager(
       this.sceneManager.scene,
+      this.eventManager
+    )
+
+    this.hdriManager = new HDRIManager(
+      this.sceneManager.scene,
+      this.renderer,
       this.eventManager
     )
 
@@ -185,10 +196,6 @@ class Load3d {
     this.resizeObserver.observe(container)
   }
 
-  /**
-   * Initialize context menu on the Three.js canvas
-   * Detects right-click vs right-drag to show menu only on click
-   */
   private initContextMenu(): void {
     const canvas = this.renderer.domElement
 
@@ -350,7 +357,6 @@ class Load3d {
       const renderAspectRatio = renderWidth / renderHeight
       this.cameraManager.updateAspectRatio(renderAspectRatio)
     } else {
-      // No aspect ratio constraint: fill the entire container
       this.renderer.setViewport(0, 0, containerWidth, containerHeight)
       this.renderer.setScissor(0, 0, containerWidth, containerHeight)
       this.renderer.setScissorTest(true)
@@ -510,7 +516,6 @@ class Load3d {
           renderHeight
         )
       } else {
-        // No aspect ratio constraints: fill container
         this.sceneManager.updateBackgroundSize(
           this.sceneManager.backgroundTexture,
           this.sceneManager.backgroundMesh,
@@ -598,7 +603,6 @@ class Load3d {
 
     await this.loaderManager.loadModel(url, originalFileName)
 
-    // Auto-detect and setup animations if present
     if (this.modelManager.currentModel) {
       this.animationManager.setupModelAnimations(
         this.modelManager.currentModel,
@@ -632,6 +636,42 @@ class Load3d {
 
   setLightIntensity(intensity: number): void {
     this.lightingManager.setLightIntensity(intensity)
+    this.forceRender()
+  }
+
+  supportsHDRI(): boolean {
+    const url = this.modelManager.originalURL
+    if (!url) return false
+    const filename = new URLSearchParams(url.split('?')[1]).get('filename')
+    if (!filename) return false
+    const ext = filename.split('.').pop()?.toLowerCase()
+    return ext ? HDRI_COMPATIBLE_MODEL_EXTENSIONS.has(`.${ext}`) : false
+  }
+
+  async loadHDRI(url: string): Promise<void> {
+    await this.hdriManager.loadHDRI(url)
+    this.forceRender()
+  }
+
+  setHDRIEnabled(enabled: boolean): void {
+    this.hdriManager.setEnabled(enabled)
+    this.lightingManager.setHDRIMode(enabled)
+    this.forceRender()
+  }
+
+  setHDRIAsBackground(show: boolean): void {
+    this.hdriManager.setShowAsBackground(show)
+    this.forceRender()
+  }
+
+  setHDRIIntensity(intensity: number): void {
+    this.hdriManager.setIntensity(intensity)
+    this.forceRender()
+  }
+
+  clearHDRI(): void {
+    this.hdriManager.clear()
+    this.lightingManager.setHDRIMode(false)
     this.forceRender()
   }
 
@@ -691,7 +731,6 @@ class Load3d {
       this.cameraManager.handleResize(renderWidth, renderHeight)
       this.sceneManager.handleResize(renderWidth, renderHeight)
     } else {
-      // No aspect ratio constraint: use container dimensions directly
       this.renderer.setSize(containerWidth, containerHeight)
       this.cameraManager.handleResize(containerWidth, containerHeight)
       this.sceneManager.handleResize(containerWidth, containerHeight)
@@ -741,7 +780,6 @@ class Load3d {
     this.recordingManager.clearRecording()
   }
 
-  // Animation methods
   public setAnimationSpeed(speed: number): void {
     this.animationManager.setAnimationSpeed(speed)
   }
@@ -858,6 +896,7 @@ class Load3d {
     this.cameraManager.dispose()
     this.controlsManager.dispose()
     this.lightingManager.dispose()
+    this.hdriManager.dispose()
     this.viewHelperManager.dispose()
     this.loaderManager.dispose()
     this.modelManager.dispose()

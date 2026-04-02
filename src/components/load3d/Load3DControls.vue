@@ -74,6 +74,14 @@
         v-if="showLightControls"
         v-model:light-intensity="lightConfig!.intensity"
         v-model:material-mode="modelConfig!.materialMode"
+        :hdri-enabled="hdriConfig?.enabled ?? false"
+      />
+
+      <HDRIControls
+        v-if="showLightControls"
+        v-model:hdri-config="hdriConfig"
+        :hdri-supported="hdriSupported"
+        @update-hdri-file="handleHDRIFileUpdate"
       />
 
       <ExportControls
@@ -89,12 +97,14 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 import CameraControls from '@/components/load3d/controls/CameraControls.vue'
 import ExportControls from '@/components/load3d/controls/ExportControls.vue'
+import HDRIControls from '@/components/load3d/controls/HDRIControls.vue'
 import LightControls from '@/components/load3d/controls/LightControls.vue'
 import ModelControls from '@/components/load3d/controls/ModelControls.vue'
 import SceneControls from '@/components/load3d/controls/SceneControls.vue'
 import Button from '@/components/ui/button/Button.vue'
 import type {
   CameraConfig,
+  HDRIConfig,
   LightConfig,
   ModelConfig,
   SceneConfig
@@ -104,17 +114,20 @@ import { cn } from '@/utils/tailwindUtil'
 const {
   isSplatModel = false,
   isPlyModel = false,
-  hasSkeleton = false
+  hasSkeleton = false,
+  hdriSupported = false
 } = defineProps<{
   isSplatModel?: boolean
   isPlyModel?: boolean
   hasSkeleton?: boolean
+  hdriSupported?: boolean
 }>()
 
 const sceneConfig = defineModel<SceneConfig>('sceneConfig')
 const modelConfig = defineModel<ModelConfig>('modelConfig')
 const cameraConfig = defineModel<CameraConfig>('cameraConfig')
 const lightConfig = defineModel<LightConfig>('lightConfig')
+const hdriConfig = defineModel<HDRIConfig>('hdriConfig')
 
 const isMenuOpen = ref(false)
 const activeCategory = ref<string>('scene')
@@ -161,20 +174,20 @@ const selectCategory = (category: string) => {
 }
 
 const getCategoryIcon = (category: string) => {
-  const icons = {
+  const icons: Record<string, string> = {
     scene: 'pi pi-image',
     model: 'pi pi-box',
     camera: 'pi pi-camera',
     light: 'pi pi-sun',
     export: 'pi pi-download'
   }
-  // @ts-expect-error fixme ts strict error
   return `${icons[category]} text-base-foreground text-lg`
 }
 
 const emit = defineEmits<{
   (e: 'updateBackgroundImage', file: File | null): void
   (e: 'exportModel', format: string): void
+  (e: 'updateHdriFile', file: File | null): void
 }>()
 
 const handleBackgroundImageUpdate = (file: File | null) => {
@@ -183,6 +196,10 @@ const handleBackgroundImageUpdate = (file: File | null) => {
 
 const handleExportModel = (format: string) => {
   emit('exportModel', format)
+}
+
+const handleHDRIFileUpdate = (file: File | null) => {
+  emit('updateHdriFile', file)
 }
 
 const closeSlider = (e: MouseEvent) => {

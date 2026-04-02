@@ -1,5 +1,3 @@
-// Use type-only imports to avoid pulling THREE.js into the main bundle
-// These imports are erased at compile time and don't create runtime dependencies
 import type * as THREE from 'three'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import type { ViewHelper } from 'three/examples/jsm/helpers/ViewHelper'
@@ -49,23 +47,22 @@ export interface LightConfig {
   intensity: number
 }
 
+export interface HDRIConfig {
+  enabled: boolean
+  hdriPath: string
+  showAsBackground: boolean
+  intensity: number
+}
+
 export interface EventCallback<T = unknown> {
   (data: T): void
 }
 
 export interface Load3DOptions {
-  // Optional target dimensions for aspect ratio control
   width?: number
   height?: number
-
-  // Dynamic dimension provider (called on every render)
-  // Use this for reactive dimensions that change over time
   getDimensions?: () => { width: number; height: number } | null
-
-  // Viewer mode flag (affects aspect ratio behavior)
   isViewerMode?: boolean
-
-  // Optional context menu callback
   onContextMenu?: (event: MouseEvent) => void
 }
 
